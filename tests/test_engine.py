@@ -41,6 +41,18 @@ class EngineTests(unittest.TestCase):
             with self.assertRaises(ValueError):validate_checks(candidate)
         with self.assertRaises(ValueError):self.engine.history(limit=201)
         with self.assertRaises(ValueError):self.engine.run('not-configured')
+    def test_dhcp_cooldown_is_shared_with_legacy_endpoint(self):
+        from nettool_agent.server import AgentService, APIError
+        self.engine.set_checks([self.spec(kind='dhcp')])
+        service=AgentService('eth0','x'*32,engine=self.engine,probe=lambda *a:{'offers':[]},clock=lambda:self.now[0])
+        service.discover(3)
+        event=self.engine.run('router')['event']
+        self.assertEqual(event['status'],'unavailable');self.assertEqual(self.calls,[])
+        self.now[0]+=61
+        self.engine.run('router');self.assertEqual(self.calls,['router'])
+        with self.assertRaises(APIError) as error:service.discover(3)
+        self.assertEqual(error.exception.status,429)
+
     def test_manual_rate_limit_and_metadata(self):
         self.engine.set_checks([self.spec()]);self.engine.run('router')
         with self.assertRaises(RuntimeError):self.engine.run('router')

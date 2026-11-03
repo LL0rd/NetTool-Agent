@@ -42,7 +42,7 @@ establish a new baseline.
 API errors carry a machine code and message; authentication 401, invalid request
 400, concurrent probe/config conflict 409, rate limit 429 with Retry-After,
 capability unavailable 503. One engine check at a time; manual starts ≥3 seconds
-apart. DHCP discovery has a separate ≥30 s cooldown (default 60 s). Requests and
+apart. DHCP discovery and saved DHCP checks share a 60 s minimum cooldown, including failed attempts. Requests and
 responses are bounded. No generic command execution, arbitrary code or router
 writes are supported.
 

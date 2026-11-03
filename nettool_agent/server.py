@@ -93,6 +93,9 @@ class AgentService:
             # Count failed attempts as well; errors must not enable a tight retry loop.
             self._next_probe = now + self.cooldown_seconds
             try:
+                if self.engine:
+                    try:return self.engine.run_dhcp_probe(lambda:self._probe(self.interface,timeout_seconds),self.cooldown_seconds)
+                    except RuntimeError as exc:raise APIError(429,'rate_limited',str(exc),60) from exc
                 return self._probe(self.interface, timeout_seconds)
             except dhcp.CapabilityError as exc:
                 raise APIError(503, "capability_unavailable", str(exc)) from exc

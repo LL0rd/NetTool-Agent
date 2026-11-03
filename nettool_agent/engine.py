@@ -59,6 +59,7 @@ class Engine:
         retention=self.config.get('retentionDays',30)
         if type(retention)is not int or not 1<=retention<=365:raise ValueError('retentionDays must be 1–365.')
         self.retention=retention
+        self._dhcp_lock=threading.Lock();self._dhcp_next=0
         self._thread=None
 
     def status(self):
@@ -112,6 +113,16 @@ class Engine:
         self.metadata(key,json.dumps({'signature':signature,'values':dict(list(known.items())[-512:])},sort_keys=True))
         return changed
 
+    def run_dhcp_probe(self, operation, cooldown=60):
+        """One DHCP attempt per minute across legacy requests and saved checks."""
+        if not self._dhcp_lock.acquire(blocking=False):raise RuntimeError('One DHCP probe is already running.')
+        try:
+            now=self.clock()
+            if now<self._dhcp_next:raise RuntimeError('Wait before starting another DHCP probe.')
+            self._dhcp_next=now+max(60,cooldown)
+            return operation()
+        finally:self._dhcp_lock.release()
+
     def run(self,identifier: str,*,scheduled=False):
         with self._lock:
             spec=next((dict(c)for c in self._checks if c['id']==identifier),None)
@@ -121,7 +132,9 @@ class Engine:
             if not scheduled:
                 if self.clock()<self._manual_next:raise RuntimeError('Wait three seconds before another check.')
                 self._manual_next=self.clock()+3
-            try: result=self.runner(spec,self.interface,self.config.get('routers',{}))
+            try:
+                operation=lambda:self.runner(spec,self.interface,self.config.get('routers',{}))
+                result=self.run_dhcp_probe(operation) if spec['kind']=='dhcp' else operation()
             except Exception as exc:
                 # Avoid leaking router passwords, tokens or raw request bodies.
                 detail='Check failed: '+type(exc).__name__
