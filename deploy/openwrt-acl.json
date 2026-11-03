@@ -1,0 +1,15 @@
+{
+  "nettool-readonly": {
+    "description": "Read-only NetTool diagnostics; no router configuration changes",
+    "read": {
+      "ubus": {
+        "system": ["board"],
+        "network.interface": ["dump"],
+        "dhcp": ["ipv4leases", "ipv6leases"],
+        "uci": ["get"],
+        "iwinfo": ["devices", "assoclist"]
+      },
+      "uci": ["dhcp"]
+    }
+  }
+}

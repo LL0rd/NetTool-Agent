@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+secrets/
+data/
+*.sqlite*
+*.pem
+*.key
+agent-token
+.DS_Store

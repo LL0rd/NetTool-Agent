@@ -1,0 +1,35 @@
+[Unit]
+Description=Customer-operated NetTool LAN Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nettool
+Group=nettool
+WorkingDirectory=/opt/nettool-agent
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/etc/nettool/environment
+ExecStart=/usr/bin/python3 -m nettool_agent --interface ${NETTOOL_INTERFACE} --bind ${NETTOOL_BIND} --token-file /etc/nettool/agent-token --cert /etc/nettool/agent-chain.pem --key /etc/nettool/agent-key.pem --config /etc/nettool/config.json --data-dir /var/lib/nettool
+StateDirectory=nettool
+StateDirectoryMode=0700
+UMask=0077
+AmbientCapabilities=CAP_NET_RAW CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

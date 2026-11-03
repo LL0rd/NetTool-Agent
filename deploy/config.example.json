@@ -1,0 +1,5 @@
+{
+  "retentionDays": 30,
+  "checks": [],
+  "routers": {}
+}

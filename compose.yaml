@@ -1,0 +1,33 @@
+services:
+  agent:
+    build: .
+    restart: unless-stopped
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_RAW, NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    tmpfs: [/tmp:size=16m,mode=1777]
+    volumes:
+      - ./secrets:/run/secrets:ro
+      - ./data:/data
+    command:
+      - --interface
+      - ${NETTOOL_INTERFACE:?Set the explicit Linux LAN interface in .env}
+      - --bind
+      - ${NETTOOL_BIND:?Set the agent LAN IP in .env}
+      - --token-file
+      - /run/secrets/agent-token
+      - --cert
+      - /run/secrets/agent-chain.pem
+      - --key
+      - /run/secrets/agent-key.pem
+      - --config
+      - /run/secrets/config.json
+      - --data-dir
+      - /data
+    logging:
+      driver: json-file
+      options: {max-size: 5m, max-file: '2'}
